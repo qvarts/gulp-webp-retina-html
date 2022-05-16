@@ -1,0 +1,32 @@
+{
+  "name": "gulp-webp-retina-html",
+  "version": "1.0.1",
+  "description": "Replaces the <img> tag with <picture> <source> <img> in HTML files. Webp, retina, php tags and data- support.",
+  "main": "index.js",
+  "author": "Qvart",
+  "license": "MIT",
+  "keywords": [
+    "gulp",
+    "webp",
+    "retina",
+    "html",
+    "php"
+  ],
+  "scripts": {
+    "test": "mocha --reporter list"
+  },
+  "dependencies": {
+    "plugin-error": "^1.0.1",
+    "through2": "^3.0.1"
+  },
+  "devDependencies": {
+    "assert": "^2.0.0",
+    "mocha": "^10.0.0",
+    "path": "^0.12.7",
+    "vinyl": "^2.2.1"
+  },
+  "repository": {
+    "url": "git@github.com:qvarts/gulp-webp-retina-html.git"
+  },
+  "homepage": "https://github.com/qvarts/gulp-webp-retina-html"
+}
