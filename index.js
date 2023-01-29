@@ -136,8 +136,12 @@ module.exports = function (options) {
 					if (~line.indexOf('<img') && !inPicture) {
 						let Re = /<img[[?>]?.*]?src=["'](\S+)["'](?:"[^"]*"|'[^']*'|[^'">])*>/gi
 						let regexpArray = Re.exec(line);
-						let imgTag = regexpArray[0];
-						let imgPath = regexpArray[1];
+
+            if (!Array.isArray(regexpArray) || regexpArray.length < 2) {
+              return line;
+            }
+
+						let [imgTag, imgPath] = regexpArray;
 						let imgExt = ~imgPath.lastIndexOf(".") ? imgPath.split(".").pop().toLowerCase() : '';
 
 						if (options.extensions.includes(imgExt) && (addWebp || addRetina)) {
