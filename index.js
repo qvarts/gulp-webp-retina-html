@@ -10,6 +10,7 @@ const PLUGIN_NAME = 'gulp-webp-retina-html';
  * @param {Object} [options.retina={}] Retina image name templates for processing (e.g. {1: '', 2: '@2x', 4: '@4x'})
  * @param {String} [options.publicPath='.'] The root directory where the images are stored
  * @param {Boolean} [options.checkExists=false] Checking for file existence
+ * @param {Boolean} [options.noWebp=false] If true, disables generate <source> tag with webp images
  * @returns {*}
  */
 module.exports = function (options) {
@@ -17,12 +18,13 @@ module.exports = function (options) {
 		extensions: ['jpg', 'jpeg', 'png', 'gif'],
 		retina: {},
 		publicPath: '.',
-		checkExists: false
+		checkExists: false,
+    noWebp: false,
 	};
 
 	options = Object.assign(defaultOptions, options);
 
-	const addWebp = (options.extensions.length > 0);
+	const addWebp = (!options.noWebp && options.extensions.length > 0);
 	const addRetina = (Object.keys(options.retina).length > 0);
 	const supportedFormats = {
 		'jpg': 'image/jpeg',
@@ -93,6 +95,18 @@ module.exports = function (options) {
 
 				if (addRetina) {
 					imgset.set(imgExt, []);
+
+          // Add fallback image path without retina suffix
+          let retinaFiePath = `${imgName}.${imgExt}`;
+          if (fileExists(retinaFiePath)) {
+            imgset.get(imgExt).push(retinaFiePath);
+          }
+
+          // Clear imgset if retina 1x option is set
+          if (options.retina[1] !== undefined) {
+            imgset.get('webp').length = 0;
+            imgset.get(imgExt).length = 0;
+          }
 
 					for (const prop in options.retina) {
 						let webpFiePath = `${imgName}${options.retina[prop]}.webp`;
