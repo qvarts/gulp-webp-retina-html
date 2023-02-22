@@ -67,7 +67,7 @@ describe('Tests', () => {
     it('should compile html file with webp image support', (done) => {
         const htmlFile = createVinyl('webp.html');
         const stream = webpHtml({
-            publicPath: __dirname
+            publicPath: __dirname + '/src',
         });
 
         stream.on('data', (updatedFile) => {
@@ -92,7 +92,7 @@ describe('Tests', () => {
                 3: '@3x',
                 4: '@4x'
             },
-            publicPath: __dirname,
+            publicPath: __dirname + '/src',
             checkExists: true
         });
 
@@ -138,7 +138,8 @@ describe('Tests', () => {
             retina: {
                 2: '@2x'
             },
-            publicPath: __dirname,
+            noWebp: true,
+            publicPath: __dirname + '/src',
             checkExists: false
         });
 
@@ -164,7 +165,7 @@ describe('Tests', () => {
                 1: '',
                 2: '@2x',
             },
-            publicPath: __dirname,
+            publicPath: __dirname + '/src',
             checkExists: false
         });
 
@@ -181,13 +182,38 @@ describe('Tests', () => {
         stream.write(htmlFile);
     });
 
+  it('should compile html file with webp and retina image support for all supported image types without 1x retina suffix', (done) => {
+    const htmlFile = createVinyl('check_all.html');
+    const stream = webpHtml({
+      extensions: ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'png', 'apng', 'gif', 'svg', 'webp',
+        'bmp', 'ico', 'cur', 'tif', 'tiff', 'avif'],
+      retina: {
+        2: '@2x',
+      },
+      publicPath: __dirname + '/src',
+      checkExists: false
+    });
+
+    stream.on('data', (updatedFile) => {
+      assert.ok(updatedFile);
+      assert.ok(updatedFile.path);
+      assert.ok(updatedFile.relative);
+      assert.ok(updatedFile.contents);
+      assert.equal(path.basename(updatedFile.path), 'check_all.html');
+      const actual = fs.readFileSync(path.join(__dirname, expectedTestsPath, 'check_all_without_retina_1x.html'), 'utf8');
+      assert.equal(String(normaliseEOL(updatedFile.contents)), normaliseEOL(actual));
+      done();
+    });
+    stream.write(htmlFile);
+  });
+
     it('should compile php file with webp and retina image support and php code included in img tag', (done) => {
         const htmlFile = createVinyl('php_includes.php');
         const stream = webpHtml({
             retina: {
                 2: '@2x',
             },
-            publicPath: __dirname,
+            publicPath: __dirname + '/src',
             checkExists: false
         });
 

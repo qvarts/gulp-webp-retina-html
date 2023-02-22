@@ -59,6 +59,7 @@ gulp.task('html',function(){
                 4: '@4x'
             },
             checkExists: true,
+            noWebp: false,
             publicPath: '.'
         }))
         .pipe(gulp.dest('./public/'))
@@ -88,6 +89,13 @@ Type: `boolean`<br>
 Default: `false`
 
 If true, only files that exist in the directory, specified by the `src` attribute, will be added to the `<picture>` tag.
+
+##### noWebp
+
+Type: `boolean`<br>
+Default: `false`
+
+If true, disables generate `<source>` tag with webp images.
 
 ##### publicPath
 
