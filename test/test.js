@@ -258,4 +258,25 @@ describe('Tests', () => {
     });
     stream.write(htmlFile);
   });
+
+  it('should compile html file with noscript falback tag', (done) => {
+    const htmlFile = createVinyl('noscript.html');
+    const stream = webpHtml({
+      publicPath: __dirname + '/src',
+      checkExists: false,
+      noscriptFallback: true,
+    });
+
+    stream.on('data', (updatedFile) => {
+      assert.ok(updatedFile);
+      assert.ok(updatedFile.path);
+      assert.ok(updatedFile.relative);
+      assert.ok(updatedFile.contents);
+      assert.equal(path.basename(updatedFile.path), 'noscript.html');
+      const actual = fs.readFileSync(path.join(__dirname, expectedTestsPath, 'noscript.html'), 'utf8');
+      assert.equal(String(normaliseEOL(updatedFile.contents)), normaliseEOL(actual));
+      done();
+    });
+    stream.write(htmlFile);
+  });
 });

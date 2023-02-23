@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Webp images</title>
+</head>
+<body>
+<picture>
+<source srcset="../img/test.webp" type="image/webp">
+<img src="../img/test.jpg" alt="test" />
+</picture>
+<noscript><img src="../img/test.png" alt="test" /></noscript>
+<picture>
+<source data-srcset="../img/test.webp" type="image/webp">
+<img data-src="../img/test.png" alt="test" />
+</picture>
+<noscript><img src="../img/test.png" alt="test" /></noscript>
+<picture>
+<source data-srcset="../img/test.webp" srcset="../img/fallback.gif" type="image/webp">
+<img data-src="../img/test.png" src="../img/fallback.gif" alt="test" />
+</picture>
+</body>
+</html>

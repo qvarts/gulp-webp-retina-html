@@ -90,13 +90,6 @@ Default: `false`
 
 If true, only files that exist in the directory, specified by the `src` attribute, will be added to the `<picture>` tag.
 
-##### noWebp
-
-Type: `boolean`<br>
-Default: `false`
-
-If true, disables generate `<source>` tag with webp images.
-
 ##### publicPath
 
 Type: `string`<br>
@@ -104,6 +97,19 @@ Default: `.`
 
 Public path where to check for image files specified in `src` attribute.
 
+##### noWebp
+
+Type: `boolean`<br>
+Default: `false`
+
+If true, disables generate `<source>` tag with webp images.
+
+##### noscriptFallback
+
+Type: `boolean`<br>
+Default: `false`
+
+If true, adds a `<noscript>` tag with a fallback image inside if using lazy loading of images with disabled JavaScript.
 
 ## Features
 Doesn't modify `<img>` elements which are already inside `<picture>`

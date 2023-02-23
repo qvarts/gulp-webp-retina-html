@@ -11,6 +11,7 @@ const PLUGIN_NAME = 'gulp-webp-retina-html';
  * @param {String} [options.publicPath='.'] The root directory where the images are stored
  * @param {Boolean} [options.checkExists=false] Checking for file existence
  * @param {Boolean} [options.noWebp=false] If true, disables generate <source> tag with webp images
+ * @param {Boolean} [options.noscriptFallback=false] If true, adds a <noscript> tag with a fallback image inside if using lazy loading of images with disabled JavaScript
  * @returns {*}
  */
 module.exports = function(options) {
@@ -20,6 +21,7 @@ module.exports = function(options) {
     publicPath: '.',
     checkExists: false,
     noWebp: false,
+    noscriptFallback: false,
   };
 
   options = Object.assign(defaultOptions, options);
@@ -127,7 +129,16 @@ module.exports = function(options) {
         }
 
         // If the lazy-load data-src attribute is present, adds the corresponding scrset attribute
-        let srcset = ~mainImgTag.indexOf('data-src') ? 'data-srcset' : 'srcset';
+        let isLazy = ~mainImgTag.indexOf('data-src');
+        let srcset = isLazy ? 'data-srcset' : 'srcset';
+
+        // Adding <noscript> tag with an image, if `noscriptFallback` option is set
+        let noscript = '';
+        if (isLazy && options.noscriptFallback) {
+          let srcPattern = /(<img[[?>]?.*]?)([^-]src=["']\S+["'])((?:"[^"]*"|'[^']*'|[^'">])*>)/gi;
+          let fallbackImgTag = mainImgTag.replace(srcPattern, '$1$3').replace('data-src', 'src');
+          noscript = `<noscript>${ fallbackImgTag }</noscript>\n`;
+        }
 
         // If fallback src attribute is present
         let fallbackSrcset = fallbackImgPath ? ` srcset="${ fallbackImgPath }"` : '';
@@ -140,58 +151,56 @@ module.exports = function(options) {
           }
         });
 
-        return (`<picture>\n${ source }${ mainImgTag }\n</picture>`);
+        return (`${ noscript }<picture>\n${ source }${ mainImgTag }\n</picture>`);
       };
 
       let inPicture = false;
 
-      const data = file.contents
-        .toString()
-        .split('\n')
-        .map(function(line) {
-          // inside/outside of tag <picture>
-          if (~line.indexOf('<picture')) inPicture = true;
-          if (~line.indexOf('</picture')) inPicture = false;
+      let data = file.contents.toString().split('\n');
+      data = data.map(function(line) {
+        // inside/outside of tag <picture>
+        if (~line.indexOf('<picture')) inPicture = true;
+        if (~line.indexOf('</picture')) inPicture = false;
 
-          // check image tag <img>
-          if (~line.indexOf('<img') && !inPicture) {
-           let srcPattern = /<img[[?>]?.*]?[^-]src=["'](\S+)["'](?:"[^"]*"|'[^']*'|[^'">])*>/gi;
-           let dataSrcPattern = /<img[[?>]?.*]?data-src=["'](\S+)["'](?:"[^"]*"|'[^']*'|[^'">])*>/gi;
-           let srcArr = srcPattern.exec(line);
-           let dataSrcArr = dataSrcPattern.exec(line);
+        // check image tag <img>
+        if (~line.indexOf('<img') && !inPicture) {
+          let srcPattern = /<img[[?>]?.*]?[^-]src=["'](\S+)["'](?:"[^"]*"|'[^']*'|[^'">])*>/gi;
+          let dataSrcPattern = /<img[[?>]?.*]?data-src=["'](\S+)["'](?:"[^"]*"|'[^']*'|[^'">])*>/gi;
+          let srcArr = srcPattern.exec(line);
+          let dataSrcArr = dataSrcPattern.exec(line);
 
-           let mainImageArr = dataSrcArr === null ? srcArr : dataSrcArr;
-           let fallbackImageArr = dataSrcArr === null ? null : srcArr;
+          let mainImageArr = dataSrcArr === null ? srcArr : dataSrcArr;
+          let fallbackImageArr = dataSrcArr === null ? null : srcArr;
 
-           if (!Array.isArray(mainImageArr) || mainImageArr.length < 2) {
-             return line;
-           }
-
-           let mainImage = {};
-           let fallbackImage = {};
-
-           [mainImage['imgTag'], mainImage['imgPath']] = mainImageArr;
-           mainImage['imgExt'] = ~mainImage['imgPath'].lastIndexOf('.')
-             ? mainImage['imgPath'].split('.').pop().toLowerCase()
-             : '';
-
-           if (Array.isArray(fallbackImageArr) && fallbackImageArr.length >= 2) {
-             [fallbackImage['imgTag'], fallbackImage['imgPath']] = fallbackImageArr;
-             fallbackImage['imgExt'] = ~fallbackImage['imgPath'].lastIndexOf('.')
-               ? fallbackImage['imgPath'].split('.').pop().toLowerCase()
-               : '';
-           }
-
-           if (options.extensions.includes(mainImage['imgExt']) && (addWebp || addRetina)) {
-             const newTag = pictureRender(mainImage, fallbackImage);
-             return line.replace(mainImage['imgTag'], newTag);
-           }
+          if (!Array.isArray(mainImageArr) || mainImageArr.length < 2) {
+            return line;
           }
 
-          return line;
-        }).join('\n');
+          let mainImage = {};
+          let fallbackImage = {};
 
-      file.contents = new Buffer.from(data);
+          [mainImage['imgTag'], mainImage['imgPath']] = mainImageArr;
+          mainImage['imgExt'] = ~mainImage['imgPath'].lastIndexOf('.')
+            ? mainImage['imgPath'].split('.').pop().toLowerCase()
+            : '';
+
+          if (Array.isArray(fallbackImageArr) && fallbackImageArr.length >= 2) {
+            [fallbackImage['imgTag'], fallbackImage['imgPath']] = fallbackImageArr;
+            fallbackImage['imgExt'] = ~fallbackImage['imgPath'].lastIndexOf('.')
+              ? fallbackImage['imgPath'].split('.').pop().toLowerCase()
+              : '';
+          }
+
+          if (options.extensions.includes(mainImage['imgExt']) && (addWebp || addRetina)) {
+            const newTag = pictureRender(mainImage, fallbackImage);
+            return line.replace(mainImage['imgTag'], newTag);
+          }
+        }
+
+        return line;
+      });
+
+      file.contents = new Buffer.from(data.join('\n'));
       this.push(file);
     }
     catch (err) {
