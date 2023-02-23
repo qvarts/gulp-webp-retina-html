@@ -13,166 +13,191 @@ const PLUGIN_NAME = 'gulp-webp-retina-html';
  * @param {Boolean} [options.noWebp=false] If true, disables generate <source> tag with webp images
  * @returns {*}
  */
-module.exports = function (options) {
-	const defaultOptions = {
-		extensions: ['jpg', 'jpeg', 'png', 'gif'],
-		retina: {},
-		publicPath: '.',
-		checkExists: false,
+module.exports = function(options) {
+  const defaultOptions = {
+    extensions: ['jpg', 'jpeg', 'png', 'gif'],
+    retina: {},
+    publicPath: '.',
+    checkExists: false,
     noWebp: false,
-	};
+  };
 
-	options = Object.assign(defaultOptions, options);
+  options = Object.assign(defaultOptions, options);
 
-	const addWebp = (!options.noWebp && options.extensions.length > 0);
-	const addRetina = (Object.keys(options.retina).length > 0);
-	const supportedFormats = {
-		'jpg': 'image/jpeg',
-		'jpeg': 'image/jpeg',
-		'jfif': 'image/jpeg',
-		'pjpeg': 'image/jpeg',
-		'pjp': 'image/jpeg',
-		'png': 'image/png',
-		'apng': 'image/apng',
-		'gif': 'image/gif',
-		'svg': 'image/svg+xml',
-		'webp': 'image/webp',
-		'bmp': 'image/bmp',
-		'ico': 'image/x-icon',
-		'cur': 'image/x-icon',
-		'tif': 'image/tiff',
-		'tiff': 'image/tiff',
-		'avif': 'image/avif',
-	};
+  const addWebp = (!options.noWebp && options.extensions.length > 0);
+  const addRetina = (Object.keys(options.retina).length > 0);
+  const supportedFormats = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'jfif': 'image/jpeg',
+    'pjpeg': 'image/jpeg',
+    'pjp': 'image/jpeg',
+    'png': 'image/png',
+    'apng': 'image/apng',
+    'gif': 'image/gif',
+    'svg': 'image/svg+xml',
+    'webp': 'image/webp',
+    'bmp': 'image/bmp',
+    'ico': 'image/x-icon',
+    'cur': 'image/x-icon',
+    'tif': 'image/tiff',
+    'tiff': 'image/tiff',
+    'avif': 'image/avif',
+  };
 
-	// console.log(`Options:`, options);
-	// console.log(`addWebp: ${addWebp}`);
-	// console.log(`addRetina: ${addRetina}`);
+  // console.log(`Options:`, options);
+  // console.log(`addWebp: ${addWebp}`);
+  // console.log(`addRetina: ${addRetina}`);
 
-	return through.obj(function (file, encoding, callback) {
+  return through.obj(function(file, encoding, callback) {
 
-		if (file.isNull()) {
-			callback(null, file);
-			return;
-		}
+    if (file.isNull()) {
+      callback(null, file);
+      return;
+    }
 
-		if (file.isStream()) {
-			callback(new PluginError(PLUGIN_NAME, 'Streaming not supported'));
-			return;
-		}
+    if (file.isStream()) {
+      callback(new PluginError(PLUGIN_NAME, 'Streaming not supported'));
+      return;
+    }
 
-		try {
-			// Checks if a file exists
-			const fileExists = path => {
-				if (!options.checkExists) return true;
+    try {
+      // Checks if a file exists
+      const fileExists = path => {
+        if (!options.checkExists) return true;
 
-				try {
-					if (fs.existsSync(`${options.publicPath}/${path}`)) {
-					  return true;
-					}
-				} catch(err) {
-					this.emit('error', new PluginError(PLUGIN_NAME, err));
-				}
+        try {
+          if (fs.existsSync(`${ options.publicPath }/${ path }`)) {
+            return true;
+          }
+        }
+        catch (err) {
+          this.emit('error', new PluginError(PLUGIN_NAME, err));
+        }
 
-				return false;
-			}
+        return false;
+      };
 
-			// Generates a <picture> block
-			const pictureRender = (imgPath, imgExt, imgTag) => {
-				
-				let imgName = imgPath.replace(`.${imgExt}`, ''); // image full path without extension
-				let imgset = new Map();
+      // Generates a <picture> block
+      const pictureRender = (mainImage, fallbackImage) => {
 
-				if (addWebp) {
-					imgset.set('webp', []);
+        let { imgPath: mainImgPath, imgExt: mainImgExt, imgTag: mainImgTag } = mainImage;
+        let { imgPath: fallbackImgPath } = fallbackImage;
 
-					let webpFiePath = `${imgName}.webp`;
+        let mainImgName = mainImgPath.replace(`.${ mainImgExt }`, ''); // image full path without extension
+        let imgset = new Map();
 
-					if (fileExists(webpFiePath)) {
-						imgset.get('webp').push(webpFiePath);
-					}
-				}
+        if (addWebp) {
+          imgset.set('webp', []);
 
-				if (addRetina) {
-					imgset.set(imgExt, []);
+          let webpFiePath = `${ mainImgName }.webp`;
+
+          if (fileExists(webpFiePath)) {
+            imgset.get('webp').push(webpFiePath);
+          }
+        }
+
+        if (addRetina) {
+          imgset.set(mainImgExt, []);
 
           // Add fallback image path without retina suffix
-          let retinaFiePath = `${imgName}.${imgExt}`;
+          let retinaFiePath = `${ mainImgName }.${ mainImgExt }`;
           if (fileExists(retinaFiePath)) {
-            imgset.get(imgExt).push(retinaFiePath);
+            imgset.get(mainImgExt).push(retinaFiePath);
           }
 
           // Clear imgset if retina 1x option is set
           if (options.retina[1] !== undefined) {
             imgset.get('webp').length = 0;
-            imgset.get(imgExt).length = 0;
+            imgset.get(mainImgExt).length = 0;
           }
 
-					for (const prop in options.retina) {
-						let webpFiePath = `${imgName}${options.retina[prop]}.webp`;
-						let retinaFiePath = `${imgName}${options.retina[prop]}.${imgExt}`;
+          for (const prop in options.retina) {
+            let webpFiePath = `${ mainImgName }${ options.retina[prop] }.webp`;
+            let retinaFiePath = `${ mainImgName }${ options.retina[prop] }.${ mainImgExt }`;
 
-						if (addWebp && imgExt !== 'webp' && fileExists(webpFiePath)) {
-							imgset.get('webp').push(`${imgName}${options.retina[prop]}.webp ${prop}x`);
-						}
-
-						if (fileExists(retinaFiePath)) {
-							imgset.get(imgExt).push(`${imgName}${options.retina[prop]}.${imgExt} ${prop}x`);
-						}
-					}
-				}
-
-				// If the lazy-load data-src attribute is present, adds the corresponding scrset attribute
-				let srcset = ~imgTag.indexOf('data-src') ? "data-srcset" : "srcset";
-				
-				let source = '';
-				imgset.forEach((item, key) => {
-					let scrsetPath = item.join(', ');
-					if (scrsetPath) {
-						source += `<source ${srcset}="${scrsetPath}" type="${supportedFormats[key]}">\n`;
-					}
-				});
-
-				return (`<picture>\n${source}${imgTag}\n</picture>`)
-			};
-
-			let inPicture = false;
-
-			const data = file.contents
-				.toString()
-				.split('\n')
-				.map(function (line) {
-					// inside/outside of tag <picture>
-					if (~line.indexOf('<picture')) inPicture = true;
-					if (~line.indexOf('</picture')) inPicture = false;
-
-					// check image tag <img>
-					if (~line.indexOf('<img') && !inPicture) {
-						let Re = /<img[[?>]?.*]?src=["'](\S+)["'](?:"[^"]*"|'[^']*'|[^'">])*>/gi
-						let regexpArray = Re.exec(line);
-
-            if (!Array.isArray(regexpArray) || regexpArray.length < 2) {
-              return line;
+            if (addWebp && mainImgExt !== 'webp' && fileExists(webpFiePath)) {
+              imgset.get('webp').push(`${ mainImgName }${ options.retina[prop] }.webp ${ prop }x`);
             }
 
-						let [imgTag, imgPath] = regexpArray;
-						let imgExt = ~imgPath.lastIndexOf(".") ? imgPath.split(".").pop().toLowerCase() : '';
+            if (fileExists(retinaFiePath)) {
+              imgset.get(mainImgExt).push(`${ mainImgName }${ options.retina[prop] }.${ mainImgExt } ${ prop }x`);
+            }
+          }
+        }
 
-						if (options.extensions.includes(imgExt) && (addWebp || addRetina)) {
-							const newTag = pictureRender(imgPath, imgExt, imgTag);
-							return line.replace(imgTag, newTag);
-						}
-					}
-					
-					return line;
-				}).join('\n');
+        // If the lazy-load data-src attribute is present, adds the corresponding scrset attribute
+        let srcset = ~mainImgTag.indexOf('data-src') ? 'data-srcset' : 'srcset';
 
-			file.contents = new Buffer.from(data);
-			this.push(file);
-		} catch (err) {
-			this.emit('error', new PluginError(PLUGIN_NAME, err));
-		}
+        // If fallback src attribute is present
+        let fallbackSrcset = fallbackImgPath ? ` srcset="${ fallbackImgPath }"` : '';
 
-		callback();
-	})
-}
+        let source = '';
+        imgset.forEach((item, key) => {
+          let scrsetPath = item.join(', ');
+          if (scrsetPath) {
+            source += `<source ${ srcset }="${ scrsetPath }"${ fallbackSrcset } type="${ supportedFormats[key] }">\n`;
+          }
+        });
+
+        return (`<picture>\n${ source }${ mainImgTag }\n</picture>`);
+      };
+
+      let inPicture = false;
+
+      const data = file.contents
+        .toString()
+        .split('\n')
+        .map(function(line) {
+          // inside/outside of tag <picture>
+          if (~line.indexOf('<picture')) inPicture = true;
+          if (~line.indexOf('</picture')) inPicture = false;
+
+          // check image tag <img>
+          if (~line.indexOf('<img') && !inPicture) {
+           let srcPattern = /<img[[?>]?.*]?[^-]src=["'](\S+)["'](?:"[^"]*"|'[^']*'|[^'">])*>/gi;
+           let dataSrcPattern = /<img[[?>]?.*]?data-src=["'](\S+)["'](?:"[^"]*"|'[^']*'|[^'">])*>/gi;
+           let srcArr = srcPattern.exec(line);
+           let dataSrcArr = dataSrcPattern.exec(line);
+
+           let mainImageArr = dataSrcArr === null ? srcArr : dataSrcArr;
+           let fallbackImageArr = dataSrcArr === null ? null : srcArr;
+
+           if (!Array.isArray(mainImageArr) || mainImageArr.length < 2) {
+             return line;
+           }
+
+           let mainImage = {};
+           let fallbackImage = {};
+
+           [mainImage['imgTag'], mainImage['imgPath']] = mainImageArr;
+           mainImage['imgExt'] = ~mainImage['imgPath'].lastIndexOf('.')
+             ? mainImage['imgPath'].split('.').pop().toLowerCase()
+             : '';
+
+           if (Array.isArray(fallbackImageArr) && fallbackImageArr.length >= 2) {
+             [fallbackImage['imgTag'], fallbackImage['imgPath']] = fallbackImageArr;
+             fallbackImage['imgExt'] = ~fallbackImage['imgPath'].lastIndexOf('.')
+               ? fallbackImage['imgPath'].split('.').pop().toLowerCase()
+               : '';
+           }
+
+           if (options.extensions.includes(mainImage['imgExt']) && (addWebp || addRetina)) {
+             const newTag = pictureRender(mainImage, fallbackImage);
+             return line.replace(mainImage['imgTag'], newTag);
+           }
+          }
+
+          return line;
+        }).join('\n');
+
+      file.contents = new Buffer.from(data);
+      this.push(file);
+    }
+    catch (err) {
+      this.emit('error', new PluginError(PLUGIN_NAME, err));
+    }
+
+    callback();
+  });
+};

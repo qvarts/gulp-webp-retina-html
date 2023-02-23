@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Webp images</title>
+</head>
+<body>
+<picture>
+<source data-srcset="../img/test.webp 1x, ../img/test@2x.webp 2x" srcset="../img/fallback.gif" type="image/webp">
+<source data-srcset="../img/test.png 1x, ../img/test@2x.png 2x" srcset="../img/fallback.gif" type="image/png">
+<img data-src="../img/test.png" src="../img/fallback.gif" alt="test" />
+</picture>
+<picture>
+<source data-srcset="../img/test.webp 1x, ../img/test@2x.webp 2x" type="image/webp">
+<source data-srcset="../img/test.png 1x, ../img/test@2x.png 2x" type="image/png">
+<img data-src="../img/test.png" alt="test" />
+</picture>
+<picture>
+<source data-srcset="../img/test.webp 1x, ../img/test@2x.webp 2x" srcset="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" type="image/webp">
+<source data-srcset="../img/test.png 1x, ../img/test@2x.png 2x" srcset="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" type="image/png">
+<img data-src="../img/test.png" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt='test' />
+</picture>
+</body>
+</html>
